@@ -26,16 +26,24 @@ public class Task {
         return completed;
     }
 
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public void setCompleted(boolean completed) {
         this.completed = completed;
     }
 
-    public LocalDate getDeadline() {
-        return deadline;
-    }
-
     public void setDeadline(LocalDate deadline) {
         this.deadline = deadline;
+    }
+
+    public LocalDate getDeadline() {
+        return deadline;
     }
 
     public String getTitle() {

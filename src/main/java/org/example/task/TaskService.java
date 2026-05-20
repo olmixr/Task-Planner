@@ -1,8 +1,10 @@
 package org.example.task;
 
+import javafx.collections.ObservableList;
 import org.example.task.database.DatabaseConnection;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 
 public class TaskService {
 
@@ -11,6 +13,5 @@ public class TaskService {
         DatabaseConnection.statement.executeUpdate("use taskplanner");
 
     }
-
 
 }

@@ -51,7 +51,7 @@ public class TaskApp extends Application {
 
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(16));
-        root.setStyle(ROOT_STYLE);
+//        root.setStyle(ROOT_STYLE);
         root.setCenter(tasksSection);
         root.setRight(detailsSection);
         BorderPane.setMargin(detailsSection, new Insets(0, 0, 0, 16));
