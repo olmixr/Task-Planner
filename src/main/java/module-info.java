@@ -4,6 +4,6 @@ module org.example.task {
     requires java.sql;
 
 
-    opens org.example.task to javafx.fxml;
+    opens org.example.task to javafx.fxml, javafx.base;
     exports org.example.task;
 }
