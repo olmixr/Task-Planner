@@ -1,31 +1,24 @@
 package org.example.task;
 
 import javafx.application.Application;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Control;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.Optional;
 
 public class TaskApp extends Application {
 
@@ -40,23 +33,22 @@ public class TaskApp extends Application {
 
     @Override
     public void start(Stage stage) throws IOException, SQLException, ClassNotFoundException {
-        taskService.startSql();
 
-        ObservableList<Task> tasks = FXCollections.observableArrayList();
-        tasks.add(new Task(1, "Learn JDBC", "Learn how to use JDBC", true, LocalDate.of(2025, 5, 20)));
+        ObservableList<Task> tasks = taskService.getAllTasks();
 
         TableView<Task> tableView = createTaskTable(tasks);
-        VBox tasksSection = createTasksSection(tableView);
-        VBox detailsSection = createDetailsSection(stage);
+        VBox tasksSection = createTasksSection(tableView, tasks);
+        VBox detailsSection = createDetailsSection(stage, tasks);
 
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(16));
-//        root.setStyle(ROOT_STYLE);
+        root.setStyle(ROOT_STYLE);
         root.setCenter(tasksSection);
         root.setRight(detailsSection);
         BorderPane.setMargin(detailsSection, new Insets(0, 0, 0, 16));
 
         Scene scene = new Scene(root, 1000, 720);
+
         stage.setTitle("Task Planner");
         stage.setMinWidth(900);
         stage.setMinHeight(600);
@@ -65,6 +57,7 @@ public class TaskApp extends Application {
     }
 
     private TableView<Task> createTaskTable(ObservableList<Task> tasks) {
+
         TableColumn<Task, Integer> idColumn = new TableColumn<>("ID");
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         idColumn.setPrefWidth(60);
@@ -79,13 +72,20 @@ public class TaskApp extends Application {
 
         TableColumn<Task, Boolean> statusColumn = new TableColumn<>("Status");
         statusColumn.setCellValueFactory(new PropertyValueFactory<>("completed"));
+
         statusColumn.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(Boolean completed, boolean empty) {
                 super.updateItem(completed, empty);
-                setText(empty || completed == null ? null : completed ? "Completed" : "Not completed");
+
+                setText(empty || completed == null
+                        ? null
+                        : completed
+                        ? "Completed"
+                        : "Not completed");
             }
         });
+
         statusColumn.setPrefWidth(130);
 
         TableColumn<Task, LocalDate> deadlineColumn = new TableColumn<>("Deadline");
@@ -93,7 +93,15 @@ public class TaskApp extends Application {
         deadlineColumn.setPrefWidth(120);
 
         TableView<Task> tableView = new TableView<>(tasks);
-        tableView.getColumns().addAll(idColumn, titleColumn, descriptionColumn, statusColumn, deadlineColumn);
+
+        tableView.getColumns().addAll(
+                idColumn,
+                titleColumn,
+                descriptionColumn,
+                statusColumn,
+                deadlineColumn
+        );
+
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         tableView.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         tableView.setPlaceholder(new Label("No tasks yet"));
@@ -101,7 +109,8 @@ public class TaskApp extends Application {
         return tableView;
     }
 
-    private VBox createTasksSection(TableView<Task> tableView) {
+    private VBox createTasksSection(TableView<Task> tableView, ObservableList<Task> tasks) {
+
         Label sectionTitle = new Label("Tasks");
         sectionTitle.setStyle(TITLE_STYLE);
 
@@ -109,37 +118,70 @@ public class TaskApp extends Application {
         Button completedTasks = createFilterButton("Completed tasks");
         Button notCompletedTasks = createFilterButton("Not completed tasks");
 
+        allTasks.setOnAction(event -> {
+            try {
+                tasks.setAll(taskService.getAllTasks());
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        completedTasks.setOnAction(event -> {
+            try {
+                tasks.setAll(taskService.CompletedTask());
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        notCompletedTasks.setOnAction(event -> {
+            try {
+                tasks.setAll(taskService.NotCompletedTask());
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
         HBox filters = new HBox(10, allTasks, completedTasks, notCompletedTasks);
         filters.setAlignment(Pos.CENTER_LEFT);
 
         VBox section = new VBox(12, sectionTitle, filters, tableView);
+
         section.setAlignment(Pos.TOP_LEFT);
         section.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+
         VBox.setVgrow(tableView, Priority.ALWAYS);
 
         return section;
     }
 
-    private VBox createDetailsSection(Stage stage) {
+    private VBox createDetailsSection(Stage stage, ObservableList<Task> tasks) {
+
         Label sectionTitle = new Label("Task Details");
         sectionTitle.setStyle(TITLE_STYLE);
 
         Label titleLabel = createFieldLabel("Title");
+
         TextField titleField = new TextField();
         titleField.setPromptText("Task title");
+
         stretchControl(titleField);
 
         Label descriptionLabel = createFieldLabel("Description");
+
         TextArea descriptionArea = new TextArea();
         descriptionArea.setPromptText("Task description");
         descriptionArea.setWrapText(true);
         descriptionArea.setPrefRowCount(5);
+
         stretchControl(descriptionArea);
 
         CheckBox completedCheckBox = new CheckBox("Task is completed");
 
         Label deadlineLabel = createFieldLabel("Deadline");
+
         DatePicker deadlinePicker = new DatePicker(LocalDate.now());
+
         stretchControl(deadlinePicker);
 
         Button createTask = createActionButton("Create task", "#2f9e44");
@@ -148,12 +190,179 @@ public class TaskApp extends Application {
         Button clearFields = createActionButton("Clear fields", "#868e96");
         Button exitButton = createActionButton("Exit", "#495057");
 
+        createTask.setOnAction(event -> {
+            String title = titleField.getText().trim();
+            String description = descriptionArea.getText().trim();
+            boolean completed = completedCheckBox.isSelected();
+            LocalDate localDate = deadlinePicker.getValue();
+
+            if (title.isEmpty()) {
+                showAlert(Alert.AlertType.ERROR, "Fill in all required fields.");
+                return;
+            }
+
+            try {
+                taskService.createTaskSQL(title, description, completed, localDate);
+                tasks.setAll(taskService.getAllTasks());
+
+                showAlert(Alert.AlertType.INFORMATION, "Success!");
+
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        updateTask.setOnAction(event -> {
+
+            Stage deleteStage = new Stage();
+
+            deleteStage.initOwner(stage);
+            deleteStage.initModality(Modality.APPLICATION_MODAL);
+            deleteStage.setTitle("Update account");
+
+            Text accountNumberLabel = new Text("Update account number:");
+
+            TextField accountNumberField = new TextField();
+            accountNumberField.setPromptText("Enter number");
+            accountNumberField.setMaxWidth(140);
+
+            Button updateButton = new Button("Update");
+            Button cancelButton = new Button("Cancel");
+
+            updateButton.setOnAction(event1 -> {
+
+                String accountNumberValue = accountNumberField.getText().trim();
+
+                if (accountNumberValue.isEmpty()) {
+                    showAlert(Alert.AlertType.ERROR, "Enter an account number.");
+                    return;
+                }
+
+                try {
+
+                    int id = Integer.parseInt(accountNumberValue);
+
+                    if (id <= 0) {
+                        showAlert(Alert.AlertType.ERROR, "Account number must be greater than zero.");
+                        return;
+                    }
+
+                    String title = titleField.getText().trim();
+                    String description = descriptionArea.getText().trim();
+                    boolean completed = completedCheckBox.isSelected();
+                    LocalDate localDate = deadlinePicker.getValue();
+
+                    if (title.isEmpty()) {
+                        showAlert(Alert.AlertType.ERROR, "Fill in all required fields.");
+                        return;
+                    }
+
+                    taskService.updateTaskSQL(title, description, completed, localDate, id);
+
+                    tasks.setAll(taskService.getAllTasks());
+
+                    showAlert(Alert.AlertType.INFORMATION, "Task updated.");
+
+                    deleteStage.close();
+
+                } catch (NumberFormatException ex) {
+
+                    showAlert(Alert.AlertType.ERROR, "Account number must contain only digits.");
+
+                } catch (SQLException e) {
+
+                    throw new RuntimeException(e);
+                }
+            });
+
+            cancelButton.setOnAction(event1 -> deleteStage.close());
+
+            HBox buttonsBox = new HBox(10, updateButton, cancelButton);
+            buttonsBox.setAlignment(Pos.CENTER);
+
+            VBox dialogLayout = new VBox(10, accountNumberLabel, accountNumberField, buttonsBox);
+            dialogLayout.setAlignment(Pos.CENTER);
+
+            Scene deleteScene = new Scene(dialogLayout, 340, 170);
+
+            deleteStage.setScene(deleteScene);
+            deleteStage.showAndWait();
+        });
+
+        deleteTask.setOnAction(event -> {
+
+            Stage deleteStage = new Stage();
+
+            deleteStage.initOwner(stage);
+            deleteStage.initModality(Modality.APPLICATION_MODAL);
+            deleteStage.setTitle("Delete account");
+
+            Text accountNumberLabel = new Text("Delete account number:");
+
+            TextField accountNumberField = new TextField();
+            accountNumberField.setPromptText("Enter number");
+            accountNumberField.setMaxWidth(140);
+
+            Button deleteButton = new Button("Delete");
+            Button cancelButton = new Button("Cancel");
+
+            deleteButton.setOnAction(event1 -> {
+
+                String accountNumberValue = accountNumberField.getText().trim();
+
+                if (accountNumberValue.isEmpty()) {
+                    showAlert(Alert.AlertType.ERROR, "Enter an account number.");
+                    return;
+                }
+
+                try {
+
+                    int accountNumber = Integer.parseInt(accountNumberValue);
+
+                    if (accountNumber <= 0) {
+                        showAlert(Alert.AlertType.ERROR, "Account number must be greater than zero.");
+                        return;
+                    }
+
+                    taskService.deleteTaskSQL(accountNumber);
+
+                    tasks.setAll(taskService.getAllTasks());
+
+                    showAlert(Alert.AlertType.INFORMATION, "Task deleted.");
+
+                    deleteStage.close();
+
+                } catch (NumberFormatException ex) {
+
+                    showAlert(Alert.AlertType.ERROR, "Account number must contain only digits.");
+
+                } catch (SQLException e) {
+
+                    throw new RuntimeException(e);
+                }
+            });
+
+            cancelButton.setOnAction(event1 -> deleteStage.close());
+
+            HBox buttonsBox = new HBox(10, deleteButton, cancelButton);
+            buttonsBox.setAlignment(Pos.CENTER);
+
+            VBox dialogLayout = new VBox(10, accountNumberLabel, accountNumberField, buttonsBox);
+            dialogLayout.setAlignment(Pos.CENTER);
+
+            Scene deleteScene = new Scene(dialogLayout, 340, 170);
+
+            deleteStage.setScene(deleteScene);
+            deleteStage.showAndWait();
+        });
+
         clearFields.setOnAction(event -> {
             titleField.clear();
             descriptionArea.clear();
             completedCheckBox.setSelected(false);
             deadlinePicker.setValue(LocalDate.now());
         });
+
         exitButton.setOnAction(event -> stage.close());
 
         VBox section = new VBox(
@@ -173,34 +382,59 @@ public class TaskApp extends Application {
                 clearFields,
                 exitButton
         );
+
         section.setAlignment(Pos.TOP_LEFT);
         section.setPadding(new Insets(16));
+
         section.setPrefWidth(FORM_WIDTH);
         section.setMinWidth(FORM_WIDTH);
         section.setMaxWidth(FORM_WIDTH);
+
         section.setStyle(PANEL_STYLE);
 
         return section;
     }
 
+    private void showAlert(Alert.AlertType alertType, String message) {
+
+        Alert alert = new Alert(alertType);
+
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+
+        alert.showAndWait();
+    }
+
     private Label createFieldLabel(String text) {
+
         Label label = new Label(text);
         label.setStyle(LABEL_STYLE);
+
         return label;
     }
 
     private Button createFilterButton(String text) {
+
         Button button = new Button(text);
+
         button.setMinHeight(32);
         button.setStyle("-fx-font-size: 13px;");
+
         return button;
     }
 
     private Button createActionButton(String text, String color) {
+
         Button button = new Button(text);
+
         button.setPrefHeight(BUTTON_HEIGHT);
         button.setMaxWidth(Double.MAX_VALUE);
-        button.setStyle("-fx-background-color: " + color + "; -fx-text-fill: white; -fx-font-size: 14px;");
+
+        button.setStyle(
+                "-fx-background-color: " + color +
+                        "; -fx-text-fill: white; -fx-font-size: 14px;"
+        );
+
         return button;
     }
 

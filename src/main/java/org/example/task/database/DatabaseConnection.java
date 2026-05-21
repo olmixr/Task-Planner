@@ -6,11 +6,15 @@ public class DatabaseConnection {
 
     public static final String USER_NAME = "root";
     public static final String PASSWORD = "root";
-    public static final String URL = "jdbc:mysql://localhost:3306/mysql";
+    public static final String URL = "jdbc:mysql://localhost:3306/taskplannerfx";
 
     public static Statement statement;
     public static Connection connection;
     public static PreparedStatement preparedStatement;
+
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(URL, USER_NAME, PASSWORD);
+    }
 
     static {
         try {
