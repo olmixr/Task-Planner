@@ -323,12 +323,13 @@ public class TaskApp extends Application {
                         showAlert(Alert.AlertType.ERROR, "Account number must be greater than zero.");
                         return;
                     }
-
-                    taskService.deleteTaskSQL(accountNumber);
-
-                    tasks.setAll(taskService.getAllTasks());
-
-                    showAlert(Alert.AlertType.INFORMATION, "Task deleted.");
+                        taskService.deleteTaskSQL(accountNumber);
+                        tasks.setAll(taskService.getAllTasks());
+                        if (taskService.deleteMessage() == true) {
+                            showAlert(Alert.AlertType.INFORMATION, "Task deleted.");
+                        }else {
+                            showAlert(Alert.AlertType.ERROR, "Account number not exist!");
+                        }
 
                     deleteStage.close();
 

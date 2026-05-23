@@ -12,6 +12,7 @@ public class TaskService {
     private static final String USER_NAME = "root";
     private static final String PASSWORD = "root";
 
+    public static boolean MessageDelete = false;
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER_NAME, PASSWORD);
     }
@@ -117,8 +118,17 @@ public class TaskService {
 
             preparedStatement.setInt(1,id);
 
-            preparedStatement.executeUpdate();
+            int affectedRows = preparedStatement.executeUpdate();
+
+            MessageDelete = false;
+            if (affectedRows >= 1){
+                MessageDelete = true;
+            }
         }
+    }
+
+    public boolean deleteMessage(){
+        return MessageDelete;
     }
 
     public void updateTaskSQL(String title,String description,boolean completed,LocalDate localDate, int id) {
