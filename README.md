@@ -11,7 +11,7 @@ The project demonstrates task creation, updating, deletion, filtering, and inter
 
 ## Main Interface
 <p align="center">
-  <img src="photo/photo1.png" width="45%" />
+  <img src="photo/photo1.png" width="65%" />
   <img src="photo/photo2.png" width="25%" />
 </p>
 
