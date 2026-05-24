@@ -78,17 +78,6 @@ Each task contains:
 
 ---
 
-# Future Improvements
-
-- Search system
-- Task categories
-- Dark mode
-- Authentication system
-- Better UI/UX design
-- Notifications and reminders
-
----
-
 # Purpose
 
 This project was created for educational purposes and JavaFX practice while learning how desktop applications interact with databases and graphical interfaces.
